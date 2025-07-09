@@ -8,11 +8,11 @@
 		<version>3.5.0</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.splicedeck</groupId>
-	<artifactId>splicedeck_websocket</artifactId>
+	<groupId>com.laynote</groupId>
+	<artifactId>laynote_websocket</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>splicedeck_websocket</name>
-	<description>Websocket for splicedeck</description>
+	<name>laynote_websocket</name>
+	<description>Websocket for laynote</description>
 	<url/>
 	<licenses>
 		<license/>
