@@ -26,7 +26,6 @@ public class BasicSocketSimulation extends Simulation {
 
     ChainBuilder noteSession = feed(noteFeeder)
             .exec(ws("Connect to /notes").connect("/notes")
-                    // After connecting, send a message to "open" the specific note
                     .onConnected(
                             exec(ws("Open Note: #{noteId}")
                                     .sendText("{\"action\": \"open\", \"noteId\": \"#{noteId}\"}"))
@@ -52,7 +51,7 @@ public class BasicSocketSimulation extends Simulation {
             )
             .exec(ws("Close Note: #{noteId}").close());
 
-    ScenarioBuilder scn = scenario("Two-Hour Baseline Soak Test")
+    ScenarioBuilder scn = scenario("Baseline Soak Test")
             .exec(noteSession, noteSession);
 
     {

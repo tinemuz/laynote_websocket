@@ -9,7 +9,11 @@ RUN mvn -pl app -am clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
+
+ENV JAVA_XMS_SIZE=256m
+ENV JAVA_XMX_SIZE=512m
+
 COPY --from=build /app/app/target/*.jar app.jar
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms${JAVA_XMS_SIZE}", "-Xmx${JAVA_XMX_SIZE}", "-jar", "app.jar"]
