@@ -28,7 +28,9 @@ public class NoteWebSocketHandler extends TextWebSocketHandler {
             if (webSocketSession.isOpen() && !session.getId().equals(webSocketSession.getId())) {
                 try {
                     System.out.println("Server: Broadcasting message to session ID: " + webSocketSession.getId());
-                    webSocketSession.sendMessage(new TextMessage(payload));
+                    synchronized (webSocketSession) {
+                        webSocketSession.sendMessage(new TextMessage(payload));
+                    }
                 } catch (IOException e) {
                     System.err.println("Error sending message to session " + webSocketSession.getId() + ": " + e.getMessage());
                 }
