@@ -4,32 +4,66 @@ import io.gatling.javaapi.core.*;
 import io.gatling.javaapi.http.*;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static io.gatling.javaapi.core.CoreDsl.*;
+import static io.gatling.javaapi.http.HttpDsl.*;
 
 public class BasicSocketSimulation extends Simulation {
+    HttpProtocolBuilder httpProtocol = http
+            .baseUrl("https://laynote-websocket.fly.dev")
+            .wsBaseUrl("wss://laynote-websocket.fly.dev");
+    Iterator<Map<String, Object>> noteFeeder =
+            Stream.generate((Supplier<Map<String, Object>>) () ->
+                    Collections.singletonMap("noteId", UUID.randomUUID().toString())
+            ).iterator();
 
-    HttpProtocolBuilder httpProtocol = HttpDsl.http
-            .baseUrl("http://localhost:8080")
-            .wsBaseUrl("ws://localhost:8080");
-
-    ScenarioBuilder scn = CoreDsl.scenario("WebSocket Ten Minute Test")
-            .exec(
-                    HttpDsl.ws("Connect to /notes").connect("/notes")
-            )
-            .repeat(60, "counter").on(
-                    CoreDsl.exec(
-                            HttpDsl.ws("Send Message").sendText("Update message #{counter} from Gatling!")
+    ChainBuilder noteSession = feed(noteFeeder)
+            .exec(ws("Connect to /notes").connect("/notes")
+                    // After connecting, send a message to "open" the specific note
+                    .onConnected(
+                            exec(ws("Open Note: #{noteId}")
+                                    .sendText("{\"action\": \"open\", \"noteId\": \"#{noteId}\"}"))
                     )
-                            .pause(Duration.ofSeconds(10))
             )
-            .exec(
-                    HttpDsl.ws("Close Connection").close()
-            );
+
+            .during(
+                    session -> Duration.ofSeconds(
+                            ThreadLocalRandom.current().nextLong(900, 1800)
+                    ),
+                    "noteInteraction"
+            ).on(
+                    randomSwitch().on(
+                            new Choice.WithWeight(80.0,
+                                    exec(ws("Send Update to #{noteId}")
+                                            .sendText("{\"noteId\": \"#{noteId}\", \"content\": \"Message from soak test...\"}")
+                                    )
+                            ),
+                            new Choice.WithWeight(20.0,
+                                    pause(Duration.ofSeconds(15), Duration.ofSeconds(30))
+                            )
+                    )
+            )
+            .exec(ws("Close Note: #{noteId}").close());
+
+    ScenarioBuilder scn = scenario("Two-Hour Baseline Soak Test")
+            .exec(noteSession, noteSession);
 
     {
         setUp(
                 scn.injectOpen(
-                        CoreDsl.atOnceUsers(100)
+                        rampUsers(100).during(Duration.ofMinutes(2)),
+
+                        rampUsers(100).during(Duration.ofMinutes(5)),
+
+                        constantUsersPerSec(4.5 / 60.0).during(Duration.ofMinutes(10))
                 )
         ).protocols(httpProtocol);
     }
-} 
+}
