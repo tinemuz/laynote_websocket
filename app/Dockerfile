@@ -13,5 +13,3 @@ COPY --from=build /app/app/target/*.jar app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
-
-COPY --from=build /app/gatling ./gatling
