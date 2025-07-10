@@ -1,5 +1,13 @@
+# fly.toml app configuration file generated for laynote-websocket on 2025-07-10T12:38:19+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
 app = 'laynote-websocket'
 primary_region = 'lhr'
+
+[build]
+  dockerfile = 'app/Dockerfile'
 
 [http_service]
   internal_port = 8080
