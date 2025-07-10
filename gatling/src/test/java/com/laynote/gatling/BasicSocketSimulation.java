@@ -57,9 +57,9 @@ public class BasicSocketSimulation extends Simulation {
     {
         setUp(
                 scn.injectOpen(
-                        rampUsers(100).during(Duration.ofMinutes(2)),
+                        rampUsers(50).during(Duration.ofMinutes(2)),
 
-                        rampUsers(100).during(Duration.ofMinutes(5)),
+                        rampUsers(50).during(Duration.ofMinutes(5)),
 
                         constantUsersPerSec(4.5 / 60.0).during(Duration.ofMinutes(10))
                 )
