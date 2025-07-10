@@ -45,7 +45,7 @@ public class BasicSocketSimulation extends Simulation {
                                     )
                             ),
                             new Choice.WithWeight(20.0,
-                                    pause(Duration.ofSeconds(15), Duration.ofSeconds(30))
+                                    pause(Duration.ofSeconds(5), Duration.ofSeconds(10))
                             )
                     )
             )
