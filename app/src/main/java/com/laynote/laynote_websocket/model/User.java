@@ -27,8 +27,8 @@ public class User {
     private String email;
 
     @Column(nullable = false, length = 50)
-    @ColumnDefault("'free'") // Provides default value at the DDL level
-    private String tier = "free"; // Provides default value at the application level
+    @ColumnDefault("'free'")
+    private String tier = "free";
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -38,7 +38,6 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // Establishes the one-to-many relationship with the Note entity
     @OneToMany(
             mappedBy = "user",
             cascade = CascadeType.ALL,

@@ -32,9 +32,6 @@ public class Note {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // Getters and Setters
-    // It's crucial to have these for the JPA provider to work correctly.
-
     public Long getId() {
         return id;
     }
