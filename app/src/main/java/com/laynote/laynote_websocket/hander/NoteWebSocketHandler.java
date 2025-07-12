@@ -18,10 +18,13 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class NoteWebSocketHandler extends TextWebSocketHandler {
 
+    private static final Logger logger = LoggerFactory.getLogger(NoteWebSocketHandler.class);
     private final NoteRepository noteRepository;
     private final NoteService noteService;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -36,7 +39,7 @@ public class NoteWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
-        System.out.println("Server: Connection established with session ID: " + session.getId());
+        logger.info("Connection established with session ID: {}", session.getId());
     }
 
     @Override
@@ -47,7 +50,7 @@ public class NoteWebSocketHandler extends TextWebSocketHandler {
             String action = wsMessage.getAction();
 
             if (action == null) {
-                System.err.println("Server: Received message with missing action. Session ID: " + session.getId());
+                logger.warn("Received message with missing action. Session ID: {}", session.getId());
                 return;
             }
 
@@ -65,13 +68,12 @@ public class NoteWebSocketHandler extends TextWebSocketHandler {
                     handleUpdateTitle(wsMessage.getNoteId(), wsMessage.getTitle(), payload);
                     break;
                 default:
-                    System.err.println("Server: Unknown action '" + action + "' received. Session ID: " + session.getId());
+                    logger.warn("Unknown action '{}' received. Session ID: {}", action, session.getId());
             }
         } catch (JsonProcessingException e) {
-            System.err.println("Server: Error parsing JSON from session " + session.getId() + ". Payload: " + message.getPayload() + " | Error: " + e.getMessage());
+            logger.error("Error parsing JSON from session {}. Payload: {} | Error: {}", session.getId(), message.getPayload(), e.getMessage());
         } catch (Exception e) {
-            System.err.println("Server: An unexpected error occurred for session " + session.getId() + ": " + e.getMessage());
-            e.printStackTrace();
+            logger.error("An unexpected error occurred for session {}: {}", session.getId(), e.getMessage(), e);
         }
     }
 
@@ -85,7 +87,7 @@ public class NoteWebSocketHandler extends TextWebSocketHandler {
         newNote.setContent("");
 
         Note savedNote = noteRepository.save(newNote);
-        System.out.println("Server: Created new note with ID: " + savedNote.getId());
+        logger.info("Created new note with ID: {}", savedNote.getId());
 
         WebSocketMessage response = new WebSocketMessage();
         response.setAction("NOTE_CREATED");
@@ -98,7 +100,7 @@ public class NoteWebSocketHandler extends TextWebSocketHandler {
         if (noteId == null) return;
         sessionsByNote.computeIfAbsent(noteId, k -> new CopyOnWriteArrayList<>()).add(session);
         noteBySession.put(session, noteId);
-        System.out.println("Server: Session ID " + session.getId() + " subscribed to note ID: " + noteId);
+        logger.info("Session ID {} subscribed to note ID: {}", session.getId(), noteId);
 
         try {
             NoteDto noteDto = noteService.findNoteById(noteId);
@@ -107,7 +109,7 @@ public class NoteWebSocketHandler extends TextWebSocketHandler {
                 session.sendMessage(new TextMessage(notePayload));
             }
         } catch (IOException e) {
-            System.err.println("Server: Error sending note data to session " + session.getId() + ": " + e.getMessage());
+            logger.error("Error sending note data to session {}: {}", session.getId(), e.getMessage());
         }
     }
 
@@ -133,7 +135,7 @@ public class NoteWebSocketHandler extends TextWebSocketHandler {
         CopyOnWriteArrayList<WebSocketSession> sessions = sessionsByNote.get(noteId);
         if (sessions == null) return;
 
-        System.out.println("Server: Broadcasting to " + sessions.size() + " sessions for note ID: " + noteId);
+        logger.info("Broadcasting to {} sessions for note ID: {}", sessions.size(), noteId);
         for (WebSocketSession webSocketSession : sessions) {
             try {
                 if (webSocketSession.isOpen()) {
@@ -142,20 +144,20 @@ public class NoteWebSocketHandler extends TextWebSocketHandler {
                     }
                 }
             } catch (IOException e) {
-                System.err.println("Server: Error broadcasting to session " + webSocketSession.getId() + ": " + e.getMessage());
+                logger.error("Error broadcasting to session {}: {}", webSocketSession.getId(), e.getMessage());
             }
         }
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        System.out.println("Server: Connection closed with session ID: " + session.getId() + " | Status: " + status.getCode());
+        logger.info("Connection closed with session ID: {} | Status: {}", session.getId(), status.getCode());
         String noteId = noteBySession.remove(session);
         if (noteId != null) {
             CopyOnWriteArrayList<WebSocketSession> sessions = sessionsByNote.get(noteId);
             if (sessions != null) {
                 sessions.remove(session);
-                System.out.println("Server: Session removed from note ID: " + noteId);
+                logger.info("Session removed from note ID: {}", noteId);
             }
         }
     }
