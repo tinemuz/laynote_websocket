@@ -3,9 +3,11 @@ package com.laynote.laynote_websocket.hander;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.laynote.laynote_websocket.dto.WebSocketMessage;
+import com.laynote.laynote_websocket.dto.NoteDto;
 import com.laynote.laynote_websocket.model.Note;
 import com.laynote.laynote_websocket.model.User;
 import com.laynote.laynote_websocket.repository.NoteRepository;
+import com.laynote.laynote_websocket.service.NoteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -21,13 +23,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class NoteWebSocketHandler extends TextWebSocketHandler {
 
     private final NoteRepository noteRepository;
+    private final NoteService noteService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentHashMap<String, CopyOnWriteArrayList<WebSocketSession>> sessionsByNote = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<WebSocketSession, String> noteBySession = new ConcurrentHashMap<>();
 
     @Autowired
-    public NoteWebSocketHandler(NoteRepository noteRepository) {
+    public NoteWebSocketHandler(NoteRepository noteRepository, NoteService noteService) {
         this.noteRepository = noteRepository;
+        this.noteService = noteService;
     }
 
     @Override
@@ -96,14 +100,15 @@ public class NoteWebSocketHandler extends TextWebSocketHandler {
         noteBySession.put(session, noteId);
         System.out.println("Server: Session ID " + session.getId() + " subscribed to note ID: " + noteId);
 
-        noteRepository.findById(noteId).ifPresent(note -> {
-            try {
-                String notePayload = objectMapper.writeValueAsString(note);
+        try {
+            NoteDto noteDto = noteService.findNoteById(noteId);
+            if (noteDto != null) {
+                String notePayload = objectMapper.writeValueAsString(noteDto);
                 session.sendMessage(new TextMessage(notePayload));
-            } catch (IOException e) {
-                System.err.println("Server: Error sending note data to session " + session.getId() + ": " + e.getMessage());
             }
-        });
+        } catch (IOException e) {
+            System.err.println("Server: Error sending note data to session " + session.getId() + ": " + e.getMessage());
+        }
     }
 
     private void handleUpdateContent(String noteId, String content, String originalPayload) {
