@@ -20,7 +20,6 @@ public class Note {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Lob
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 

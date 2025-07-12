@@ -37,6 +37,11 @@
                 <groupId>io.gatling</groupId>
                 <artifactId>gatling-maven-plugin</artifactId>
                 <version>${gatling.plugin.version}</version>
+                <configuration>
+                    <jvmArgs>
+                        <jvmArg>-Xmx4g</jvmArg>
+                    </jvmArgs>
+                </configuration>
             </plugin>
         </plugins>
     </build>

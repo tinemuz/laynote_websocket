@@ -31,7 +31,6 @@ public class BasicSocketSimulation extends Simulation {
 
                     .repeat(3, "creationCounter").on(
                             exec(ws("Create Note #{creationCounter}")
-                                    // Corrected userId to 4
                                     .sendText("{\"action\": \"CREATE_NOTE\", \"userId\": 4, \"title\": \"Gatling Note #{creationCounter}\"}")
                                     .await(30).on(
                                             ws.checkTextMessage("Check for NOTE_CREATED")
@@ -73,10 +72,15 @@ public class BasicSocketSimulation extends Simulation {
             .exec(multiNoteUserJourney);
 
     {
+        // ramp up 10 users and then continuously loop through the journey for 5 minutes
+        // 30 notes created
+        // with each updated repeatedly
         setUp(
                 scn.injectOpen(
-                        rampUsers(10).during(Duration.ofMinutes(1)),
-                        constantUsersPerSec(2).during(Duration.ofMinutes(5))
+                        rampUsers(10).during(Duration.ofMinutes(1))
+                ).throttle(
+                        reachRps(10).in(Duration.ofSeconds(10)),
+                        holdFor(Duration.ofMinutes(5))
                 )
         ).protocols(httpProtocol);
     }
